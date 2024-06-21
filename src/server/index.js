@@ -8,6 +8,7 @@ const { notFound } = require("../middlewares/notFound");
 const { errorMiddlewares } = require("../middlewares/error");
 
 const userRoute = require("../route/user");
+const transactionRoute = require("../route/transaction");
 
 const URL = process.env.MONGODB_URL;
 
@@ -18,13 +19,12 @@ module.exports = function restApiServer(app) {
   app.use(urlencoded({ extended: false }));
   app.use(express.static("public"));
 
+  mongoose.Promise = global.Promise;
 
-    mongoose.Promise = global.Promise;
-
-    mongoose
-      .connect(URL)
-      .then(() => console.log("Connection Successfully", "\n"))
-      .catch((err) => console.log(err));
+  mongoose
+    .connect(URL)
+    .then(() => console.log("mongoose is connecting . .", "\n"))
+    .catch((err) => console.log(err));
 
   app.use("/ping", (req, res, next) => {
     try {
@@ -36,6 +36,7 @@ module.exports = function restApiServer(app) {
   });
 
   app.use("/user", userRoute);
+  app.use("/transaction", transactionRoute);
 
   app.use(notFound);
   app.use(errorMiddlewares);
