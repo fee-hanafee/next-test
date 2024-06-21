@@ -7,6 +7,8 @@ const { json, urlencoded } = require("express");
 const { notFound } = require("../middlewares/notFound");
 const { errorMiddlewares } = require("../middlewares/error");
 
+const userRoute = require("../route/user");
+
 const URL = process.env.MONGODB_URL;
 
 module.exports = function restApiServer(app) {
@@ -16,12 +18,13 @@ module.exports = function restApiServer(app) {
   app.use(urlencoded({ extended: false }));
   app.use(express.static("public"));
 
-  mongoose.Promise = global.Promise;
 
-  mongoose
-    .connect(URL)
-    .then(() => console.log("Connection Successfully", "\n"))
-    .catch((err) => console.log(err));
+    mongoose.Promise = global.Promise;
+
+    mongoose
+      .connect(URL)
+      .then(() => console.log("Connection Successfully", "\n"))
+      .catch((err) => console.log(err));
 
   app.use("/ping", (req, res, next) => {
     try {
@@ -31,6 +34,8 @@ module.exports = function restApiServer(app) {
       next(new CustomError("Ping Error", "NotFoundData", 500));
     }
   });
+
+  app.use("/user", userRoute);
 
   app.use(notFound);
   app.use(errorMiddlewares);
