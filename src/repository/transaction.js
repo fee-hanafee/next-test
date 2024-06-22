@@ -1,7 +1,8 @@
+const mongoose = require("mongoose");
+
+const { CustomError } = require("../config/error");
 const User = require("../schema/user");
 const Transaction = require("../schema/transaction");
-const mongoose = require("mongoose");
-const { CustomError } = require("../config/error");
 
 module.exports.deposit = async (userId, amount) => {
   const session = await mongoose.startSession();
@@ -40,6 +41,7 @@ module.exports.getAccount = async (bank_account) => {
   const { _id } = await User.findOne({ bank_account });
   return _id;
 };
+
 module.exports.transfer = async (senderId, receiverId, amount) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -83,6 +85,42 @@ module.exports.transfer = async (senderId, receiverId, amount) => {
     session.endSession();
 
     return { senderTransaction, receiverTransaction };
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
+};
+
+module.exports.withdraw = async (userId, amount) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const user = await User.findById(userId).session(session);
+
+    if (!user) {
+      throw new CustomError("User not found", "WRONG_INPUT", 400);
+    }
+
+    if (user.balance < amount) {
+      throw new CustomError("Insufficient balance", "WRONG_INPUT", 400);
+    }
+
+    user.balance -= amount;
+    await user.save({ session });
+
+    const transaction = new Transaction({
+      user_id: userId,
+      type: "Withdraw",
+      amount: amount,
+    });
+
+    await transaction.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return user;
   } catch (error) {
     await session.abortTransaction();
     session.endSession();

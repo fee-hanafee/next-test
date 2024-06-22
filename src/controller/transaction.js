@@ -23,3 +23,16 @@ module.exports.transfer = utils.catchError(async (req, res) => {
 
   res.status(201).json({ transaction });
 });
+
+module.exports.withdraw = utils.catchError(async (req, res) => {
+  const { amount } = req.body;
+  const userId = req.user._id;
+
+  const user = await repo.transaction.withdraw(userId, amount);
+
+  const userObj = user.toObject();
+  
+  delete userObj.password;
+
+  res.status(201).json({ user: userObj });
+});
