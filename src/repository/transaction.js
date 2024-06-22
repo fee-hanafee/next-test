@@ -127,3 +127,6 @@ module.exports.withdraw = async (userId, amount) => {
     throw error;
   }
 };
+
+module.exports.getAllTransaction = async (user_id) =>
+  await Transaction.find({ user_id });

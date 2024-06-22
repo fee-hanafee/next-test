@@ -31,8 +31,16 @@ module.exports.withdraw = utils.catchError(async (req, res) => {
   const user = await repo.transaction.withdraw(userId, amount);
 
   const userObj = user.toObject();
-  
+
   delete userObj.password;
 
   res.status(201).json({ user: userObj });
+});
+
+module.exports.getAllTransactionById = utils.catchError(async (req, res) => {
+  const userId = req.user._id;
+
+  const transaction = await repo.transaction.getAllTransaction(userId);
+
+  res.status(201).json({ transaction });
 });

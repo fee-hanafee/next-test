@@ -8,7 +8,7 @@ module.exports.getAllUser = utils.catchError(async (req, res) => {
 });
 
 module.exports.createUser = utils.catchError(async (req, res) => {
-  req.body.bank_account = utils.generate()
+  req.body.bank_account = utils.generate();
 
   req.body.password = await utils.bcrypt.hashed(req.body.password);
 
@@ -38,5 +38,16 @@ module.exports.login = utils.catchError(async (req, res) => {
 
   delete userObj.password;
 
-  res.status(200).json({ token, userObj });
+  res.status(200).json({ token, user: userObj });
+});
+
+module.exports.getMe = utils.catchError(async (req, res) => {
+  const userId = req.user._id;
+
+  const user = await repo.user.getAccoutById(userId);
+
+  const userObj = user.toObject();
+  delete userObj.password;
+
+  res.status(200).json({ user: userObj });
 });
