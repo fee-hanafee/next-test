@@ -1,5 +1,6 @@
 const utils = require("../utils");
 const repo = require("../repository");
+const { CustomError } = require("../config/error");
 
 module.exports.deposit = utils.catchError(async (req, res) => {
   const userId = req.user._id;
@@ -11,8 +12,10 @@ module.exports.deposit = utils.catchError(async (req, res) => {
 });
 
 module.exports.transfer = utils.catchError(async (req, res) => {
-  const { account, amount } = req.body;
   const userId = req.user._id;
+  const { account, amount } = req.body;
+
+  console.log(userId, " *****************");
   const receiverId = await repo.transaction.getAccount(account);
 
   const transaction = await repo.transaction.transfer(
@@ -37,10 +40,10 @@ module.exports.withdraw = utils.catchError(async (req, res) => {
   res.status(201).json({ user: userObj });
 });
 
-module.exports.getAllTransactionById = utils.catchError(async (req, res) => {
+module.exports.getTransactionsByUserId = utils.catchError(async (req, res) => {
   const userId = req.user._id;
 
-  const transaction = await repo.transaction.getAllTransaction(userId);
+  const transaction = await repo.transaction.getTransactionsByUserId(userId);
 
   res.status(201).json({ transaction });
 });

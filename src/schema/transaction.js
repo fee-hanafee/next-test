@@ -13,6 +13,7 @@ const TransactionSchema = new mongoose.Schema({
   type: { type: String, enum: ["Deposit", "Withdraw","Transfer"] },
 
   amount: { type: Number, required: true },
+  remain:  Number, 
   user_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",

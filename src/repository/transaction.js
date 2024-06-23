@@ -22,6 +22,7 @@ module.exports.deposit = async (userId, amount) => {
       type: "Deposit",
       amount: amount,
       receiver_id: userId,
+      remain: +user.balance,
     });
 
     await transaction.save({ session });
@@ -38,7 +39,11 @@ module.exports.deposit = async (userId, amount) => {
 };
 
 module.exports.getAccount = async (bank_account) => {
-  const { _id } = await User.findOne({ bank_account });
+  const receiver = await User.findOne({ bank_account });
+
+  if (!receiver)
+    throw new CustomError("Receiver_not_found", "WRONG_INPUT", 400);
+  const { _id } = receiver;
   return _id;
 };
 
@@ -68,12 +73,14 @@ module.exports.transfer = async (senderId, receiverId, amount) => {
       amount: amount,
       sender_id: senderId,
       receiver_id: receiverId,
+      remain: sender.balance,
     });
 
     const receiverTransaction = new Transaction({
       user_id: receiverId,
       type: "Transfer",
       amount: amount,
+      remain: receiver.balance,
       sender_id: senderId,
       receiver_id: receiverId,
     });
@@ -113,6 +120,7 @@ module.exports.withdraw = async (userId, amount) => {
       user_id: userId,
       type: "Withdraw",
       amount: amount,
+      remain: user.balance,
     });
 
     await transaction.save({ session });
@@ -128,5 +136,68 @@ module.exports.withdraw = async (userId, amount) => {
   }
 };
 
-module.exports.getAllTransaction = async (user_id) =>
-  await Transaction.find({ user_id });
+module.exports.getTransactionsByUserId = async (userId) => {
+  try {
+    const results = await Transaction.aggregate([
+      {
+        $match: { user_id: new mongoose.Types.ObjectId(userId) },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "user_id",
+          foreignField: "_id",
+          as: "userDetails",
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "sender_id",
+          foreignField: "_id",
+          as: "senderDetails",
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "receiver_id",
+          foreignField: "_id",
+          as: "receiverDetails",
+        },
+      },
+      {
+        $unwind: { path: "$userDetails", preserveNullAndEmptyArrays: true },
+      },
+      {
+        $unwind: { path: "$senderDetails", preserveNullAndEmptyArrays: true },
+      },
+      {
+        $unwind: { path: "$receiverDetails", preserveNullAndEmptyArrays: true },
+      },
+      {
+        $project: {
+          _id: 1,
+          type: 1,
+          amount: 1,
+          remain: 1,
+          created_at: 1,
+          "userDetails.first_name": 1,
+          "userDetails.last_name": 1,
+          "senderDetails.first_name": 1,
+          "senderDetails.last_name": 1,
+          "receiverDetails.first_name": 1,
+          "receiverDetails.last_name": 1,
+          "userDetails.bank_account": 1,
+          "senderDetails.bank_account": 1,
+          "receiverDetails.bank_account": 1,
+        },
+      },
+    ]);
+
+    return results;
+  } catch (err) {
+    console.error(err);
+    throw err;
+  }
+};
